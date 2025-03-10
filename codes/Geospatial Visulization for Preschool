@@ -1,0 +1,60 @@
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# ✅ 读取中国省级行政区数据（GeoJSON）
+geojson_path = "China.geoJson"
+provinces = gpd.read_file(geojson_path)
+
+# ✅ 民办高等教育学校数量数据（确保名称与 GeoJSON 一致）
+edu_counts = {
+    "北京市": 1037, "天津市": 1300, "河北省": 10412, "山西省": 3046, "内蒙古自治区": 2421,
+    "辽宁省": 7320, "吉林省": 3099, "黑龙江省": 3382, "上海市": 654, "江苏省": 3167,
+    "浙江省": 4303, "安徽省": 5954, "福建省": 5816, "江西省": 9666, "山东省": 12000,
+    "河南省": 18056, "湖北省": 4000, "湖南省": 10580, "广东省": 13000, "广西壮族自治区": 9971,
+    "海南省": 2000, "重庆市": 3352, "四川省": 10602, "贵州省": 5109, "云南省": 6067,
+    "西藏自治区": 47, "陕西省": 3649, "甘肃省": 178, "青海省": 80, "宁夏回族自治区": 500,
+    "新疆维吾尔自治区": 918, "台湾省": 0, "香港特别行政区": 0, "澳门特别行政区": 0
+}
+
+# ✅ 转换为 DataFrame
+edu_df = pd.DataFrame(edu_counts.items(), columns=["name", "Private_Higher_Edu_Count"])
+
+# ✅ 省份名称匹配（去空格，确保格式一致）
+provinces["name"] = provinces["name"].str.strip()
+edu_df["name"] = edu_df["name"].str.strip()
+
+# ✅ 合并数据
+provinces = provinces.merge(edu_df, on="name", how="left")
+
+# ✅ 确保数据合并成功
+print(provinces[["name", "Private_Higher_Edu_Count"]].head(10))
+
+# ✅ 处理 NaN 值（填充 0）
+provinces["Private_Higher_Edu_Count"] = provinces["Private_Higher_Edu_Count"].fillna(0).astype(int)
+
+# ✅ 设置颜色映射范围（白色 -> 深蓝）
+vmin, vmax = 100,8000  # 颜色从 0（白色）到 35（深蓝）
+
+# ✅ 绘制地图
+fig, ax = plt.subplots(figsize=(12, 8))
+cmap = "Purples"  # 颜色改成蓝色
+
+# ✅ 生成地图
+plot = provinces.plot(column="Private_Higher_Edu_Count", cmap=cmap, linewidth=0.8, edgecolor='black',
+                      legend=True, ax=ax, vmin=vmin, vmax=vmax)
+
+# ✅ 修改颜色条（Colorbar）
+cbar = plot.get_figure().colorbar(plot.get_children()[0], ax=ax)
+cbar.set_label("Number of Private Kindergarten Education Schools", fontsize=12)  # 颜色轴英文解释
+
+# ✅ 去掉坐标轴
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_frame_on(False)
+
+# ✅ 添加英文标题
+plt.title("Distribution of Private Kindergarten Education Schools in China (2022)", fontsize=14)
+
+# ✅ 显示地图
+plt.show()
